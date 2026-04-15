@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Traffic Predictor</title>
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"></script>
+  <style>
+    #map { height: 500px; width: 100%; }
+    body { font-family: Arial; padding: 10px; }
+    input { margin: 5px; padding: 5px; }
+  </style>
+</head>
+<body>
+
+<h2>🚦 Smart Route Predictor</h2>
+
+<input id="source" placeholder="Enter Source">
+<input id="destination" placeholder="Enter Destination">
+<button onclick="calculateRoutes()">Search</button>
+
+<div id="map"></div>
+<div id="info"></div>
+
+<script>
+let map, directionsService;
+let renderers = [];
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: 12.9716, lng: 77.5946 }, // Bangalore
+    zoom: 12
+  });
+
+  directionsService = new google.maps.DirectionsService();
+}
+
+function calculateRoutes() {
+  const source = document.getElementById("source").value;
+  const destination = document.getElementById("destination").value;
+
+  // Clear old routes
+  renderers.forEach(r => r.setMap(null));
+  renderers = [];
+
+  directionsService.route({
+    origin: source,
+    destination: destination,
+    travelMode: 'DRIVING',
+    provideRouteAlternatives: true
+  }, function(result, status) {
+    if (status === 'OK') {
+
+      const routes = result.routes;
+
+      let output = "";
+
+      routes.forEach((route, i) => {
+
+        const renderer = new google.maps.DirectionsRenderer({
+          map: map,
+          directions: result,
+          routeIndex: i,
+          polylineOptions: {
+            strokeColor: i === 0 ? "green" : (i === 1 ? "blue" : "red")
+          }
+        });
+
+        renderers.push(renderer);
+
+        // Simulated congestion score
+        const score = Math.floor(Math.random() * 100);
+        const delay = Math.floor(score / 5);
+
+        output += `
+          <div style="border:1px solid #ccc; margin:10px; padding:10px;">
+            <h3>Route ${i+1}</h3>
+            <p>Distance: ${route.legs[0].distance.text}</p>
+            <p>Time: ${route.legs[0].duration.text}</p>
+            <p>Congestion Score: ${score}</p>
+            <p>Delay: ${delay} mins</p>
+            ${score > 60 ? "<p style='color:red'>⚠️ Congestion Expected</p>" : ""}
+          </div>
+        `;
+      });
+
+      document.getElementById("info").innerHTML = output;
+    }
+  });
+}
+
+window.onload = initMap;
+</script>
+
+</body>
+</html>
